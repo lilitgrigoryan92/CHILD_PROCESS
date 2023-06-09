@@ -54,10 +54,11 @@ process.on("error",(error)=>{
 })
 }
 
-statistics('ls', ['-l'], 5000)
+statistics('C:\Users\User\Desktop\PROCESS', ['-l'], 5000)
   .then((result) => {
     console.log('Statistics:', result);
   })
   .catch((error) => {
     console.error('Error:', error);
   });
+
