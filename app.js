@@ -54,7 +54,7 @@ process.on("error",(error)=>{
 })
 }
 
-statistics('C:\Users\User\Desktop\PROCESS', ['-l'], 5000)
+statistics('ls', ['1'], 5000)
   .then((result) => {
     console.log('Statistics:', result);
   })
