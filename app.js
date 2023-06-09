@@ -28,7 +28,7 @@ process.on("close",(code)=>{
     }
     else{
         success=false
-   console.error( `Process exited with code ${code}`) 
+        console.log("Error message",code)
     }
 
     const statistics={
