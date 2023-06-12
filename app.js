@@ -1,64 +1,87 @@
-
 const { spawn } = require('child_process');
 const fs=require("fs")
+const path=require("path")
 
 function statistics(command,arguments=[],time=Infinity){
 
-    const timestamp = new Date().toISOString()
-    const logFilePath = "/logs" + timestamp + command + ".json";
+    const timestamp = new Date().toISOString().replaceAll(":","-")
+    const logFilePath =path.join(__dirname,"logs",timestamp+command + ".json") 
 
 
     const start=new Date()
 
 return new Promise((resolve,reject)=>{
-  const process=spawn(command,arguments,{timeout:time})
+  const childProcess=spawn(command,arguments,{timeout:time})
 
 let data=""
-process.stdout.on("data",(chunk)=>{
+childProcess.stdout.on("data",(chunk)=>{
     data+=chunk.toString()
 })
 
-process.on("close",(code)=>{
+childProcess.on("close",(code)=>{
     const end=new Date()
     const duration=end-start
     let success;
-    if(code===0){
-         success=true
+    let commandSuccess;
 
-    }
-    else{
-        success=false
-        console.log("Error message",code)
-    }
+    if (code === 0) {
+        success = true;
+        commandSuccess = true;
+      } else {
+        success = false;
+        commandSuccess = false;
+      }
 
-    const statistics={
-        start:start.toString(),
+      const stat = {
+        start: start.toString(),
         duration,
         success,
-        commandSuccess: success ? {} : undefined,
-        error: success ? {} : console.log("Error message")
-    }
+      };
+      
+      if (!commandSuccess) {
+        stat.commandSuccess = commandSuccess;
+      }
+      
+      if (!success) {
+        stat.error = "An error occurred";
+      }
 
-fs.writeFile(logFilePath,JSON.stringify(statistics,undefined,2),(err)=>{
-    if(err){
-        reject(err)
-    }else{
-        resolve(statistics)
-    }
-})
+    
+    fs.writeFile(logFilePath, JSON.stringify(stat, undefined, 2), (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(stat);
+        }
+      });
+    });
 
-    })
-process.on("error",(error)=>{
-    reject(error)
-})
-})
+    childProcess.on("error", (error) => {
+      const stat = {
+        start: start.toString(),
+        duration: 0,
+        success: false,
+        commandSuccess: false,
+        error: error.message,
+      };
+
+      console.log(error)
+
+      fs.writeFile(logFilePath, JSON.stringify(stat, undefined, 2), (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(stat);
+        }
+      });
+    });
+  });
 }
 
-statistics('ls', ['1'], 5000)
+statistics('l', ['l'], 5000)
   .then((result) => {
-    console.log('Statistics:', result);
+    console.log('Stat:', result);
   })
   .catch((error) => {
     console.error('Error:', error);
   });
-
