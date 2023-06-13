@@ -1,30 +1,28 @@
 const { spawn } = require('child_process');
-const fs=require("fs")
-const path=require("path")
+const fs = require("fs");
+const path = require("path");
 
-function statistics(command,arguments=[],time=Infinity){
+function statistics(command, arguments = [], time = Infinity) {
+  const timestamp = new Date().toISOString().replaceAll(":", "-");
+  const logFilePath = path.join(__dirname, "logs", timestamp + command + ".json");
 
-    const timestamp = new Date().toISOString().replaceAll(":","-")
-    const logFilePath =path.join(__dirname,"logs",timestamp+command + ".json") 
+  const start = new Date();
 
+  return new Promise((resolve, reject) => {
+    const childProcess = spawn(command, arguments, { timeout: time });
 
-    const start=new Date()
+    let data = "";
+    childProcess.stdout.on("data", (chunk) => {
+      data += chunk.toString();
+    });
 
-return new Promise((resolve,reject)=>{
-  const childProcess=spawn(command,arguments,{timeout:time})
+    childProcess.on("close", (code) => {
+      const end = new Date();
+      const duration = end - start;
+      let success;
+      let commandSuccess;
 
-let data=""
-childProcess.stdout.on("data",(chunk)=>{
-    data+=chunk.toString()
-})
-
-childProcess.on("close",(code)=>{
-    const end=new Date()
-    const duration=end-start
-    let success;
-    let commandSuccess;
-
-    if (code === 0) {
+      if (code === 0) {
         success = true;
         commandSuccess = true;
       } else {
@@ -37,17 +35,16 @@ childProcess.on("close",(code)=>{
         duration,
         success,
       };
-      
+
       if (!commandSuccess) {
         stat.commandSuccess = commandSuccess;
       }
-      
+
       if (!success) {
         stat.error = "An error occurred";
       }
 
-    
-    fs.writeFile(logFilePath, JSON.stringify(stat, undefined, 2), (err) => {
+      fs.writeFile(logFilePath, JSON.stringify(stat, undefined, 2), (err) => {
         if (err) {
           reject(err);
         } else {
@@ -65,15 +62,7 @@ childProcess.on("close",(code)=>{
         error: error.message,
       };
 
-      console.log(error)
-
-      fs.writeFile(logFilePath, JSON.stringify(stat, undefined, 2), (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(stat);
-        }
-      });
+      reject(stat);
     });
   });
 }
